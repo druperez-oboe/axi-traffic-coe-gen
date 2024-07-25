@@ -53,15 +53,23 @@ def write_to_files():
     for line in text.split("\n"):
         line_num += 1
         line = line.split(" ")
+
+        # Convert ascii and decimal entries into hex
+        for i in range(len(line)):
+            if(line[i][0:2] == "a:"):
+                line[i] = ''.join(format(ord(c), 'x') for c in line[i][2:])
+            elif(line[i][0:2] == "d:"):
+                line[i] = hex(int(line[i][2:]))[2:]
+
         if(len(line) == 2): # Read command
             files[3][1] += hex(131072 + line_num*257)[2:].upper().zfill(8) + "\n"
-            files[0][1]  += line[1].zfill(8) + "\n"
+            files[0][1]  += line[1].zfill(8)[:8] + "\n"
             files[1][1]  += "00000000\n"
             files[2][1]  += "FFFFFFFF\n"
         elif(len(line) == 3): # Write command
             files[3][1]  += hex(196608 + line_num*257)[2:].upper().zfill(8) + "\n"
-            files[0][1]  += line[1].zfill(8) + "\n"
-            files[1][1]  += line[2].zfill(8) + "\n"
+            files[0][1]  += line[1].zfill(8)[:8] + "\n"
+            files[1][1]  += line[2].zfill(8)[:8] + "\n"
             files[2][1]  += "FFFFFFFF\n"
         else:
             print("ERROR: ", line)
@@ -96,14 +104,14 @@ def load_text():
             return file.read()
     else:
         # If the file does not exist, create it with default text
-        default_text = "Enter your text here..."
+        default_text = "w 0 a:oboe\nr 0\nr 200\n"
         with open(text_file, "w") as file:
             file.write(default_text)
         return default_text
 
 # Create the main window
 root = tk.Tk()
-root.title("Text File Writer")
+root.title("AXI Traffic COE Generator")
 
 # Set the default folder to the current working directory
 default_folder = os.getcwd()
@@ -124,10 +132,10 @@ folder_display_label = tk.Label(root, text=f"Selected Folder: {default_folder}")
 folder_display_label.pack(pady=5)
 
 # Text entry
-text_label = tk.Label(root, text="Format: \n w addr data \n r addr")
+text_label = tk.Label(root, text="Format: \n w addr data \n r addr \n All in hex unless a: or d: prefix is added")
 text_label.pack(pady=5)
 
-text_entry = tk.Text(root, height=10, width=40)
+text_entry = tk.Text(root, height=20, width=30)
 text_entry.pack(pady=5)
 
 # Insert loaded text into the text entry box
